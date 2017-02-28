@@ -1,0 +1,14 @@
+[package]
+name = "mine"
+version = "0.0.0"
+authors = ["Johannes Löthberg <johannes@kyriasis.com>"]
+
+[dependencies]
+clap = "^2.20"
+error-chain = "^0.7"
+sodiumoxide = { git = "https://github.com/dnaq/sodiumoxide/" }
+serde = "^0.9.9"
+serde_derive = "^0.9.9"
+rmp = "^0.8.2"
+rmp-serde = "^0.12.2"
+xdg = "^2.0"
