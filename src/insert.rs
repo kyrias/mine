@@ -14,15 +14,13 @@ use std::collections::HashMap;
 
 use clap::ArgMatches;
 
-use mine::{MineKey, Encrypted, Password};
+use mine::{Mine, Encrypted, Password};
 use ::errors::*;
 
 
-pub fn insert_run(matches: &ArgMatches, dirs: xdg::BaseDirectories) -> Result<()> {
-    let key_path = dirs.find_data_file("secret.key").ok_or("could not find secret key")?;
-    let key = MineKey::load_key(key_path.as_path())
-        .chain_err(|| "could not load secret key")?;
-
+pub fn insert_run(matches: &ArgMatches) -> Result<()> {
+    let mine = Mine::new("mine")
+        .chain_err(|| "failed to initialize mine")?;
 
     let password = Password {
         password: matches.value_of("PASSWORD").unwrap().to_owned(),
@@ -31,11 +29,11 @@ pub fn insert_run(matches: &ArgMatches, dirs: xdg::BaseDirectories) -> Result<()
     let encoded = rmp_serde::encode::to_vec(&password)
         .chain_err(|| "failed to encode password struct")?;
 
-    let encrypted: Encrypted = key.encrypt(&encoded[..]);
+    let encrypted: Encrypted = mine.encrypt(&encoded[..]);
 
 
     let name = matches.value_of("NAME").unwrap();
-    let pass_path = dirs.place_data_file(Path::new("store").join(name))
+    let pass_path = mine.dirs.place_data_file(Path::new("store").join(name))
         .chain_err(|| "cannot place password file")?;
 
 

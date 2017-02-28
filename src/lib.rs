@@ -17,7 +17,7 @@ use serde::Deserialize;
 use sodiumoxide::crypto::secretbox;
 
 
-mod errors {
+pub mod errors {
     extern crate rmp_serde;
 
     error_chain! {
@@ -50,21 +50,6 @@ impl MineKey {
         Ok(key)
     }
 
-    pub fn encrypt(&self, plaintext: &[u8]) -> Encrypted {
-        let nonce = secretbox::gen_nonce();
-        let ciphertext = secretbox::seal(plaintext, &nonce, &self.key);
-        Encrypted {
-            nonce: nonce,
-            ciphertext: ciphertext,
-        }
-    }
-
-    pub fn decrypt(&self, ciphertext: &Encrypted) -> Result<Vec<u8>> {
-        match secretbox::open(&ciphertext.ciphertext, &ciphertext.nonce, &self.key) {
-            Ok(plaintext) => Ok(plaintext),
-            Err(()) => Err("failed to decrypt".to_owned())?,
-        }
-    }
 }
 
 
@@ -78,4 +63,56 @@ pub struct Password {
 pub struct Encrypted {
     pub nonce: secretbox::Nonce,
     pub ciphertext: Vec<u8>,
+}
+
+
+pub struct Mine {
+    pub dirs: xdg::BaseDirectories,
+    key: MineKey,
+}
+
+impl Mine {
+    pub fn new(name: &str) -> Result<Mine> {
+        let dirs = xdg::BaseDirectories::with_prefix(name).unwrap();
+
+        let key_path = dirs.find_data_file("secret_key")
+            .ok_or("could not find secret key")?;
+        let key = MineKey::load_key(key_path.as_path())
+            .chain_err(|| "failed to load private key")?;
+
+        Ok(Mine {
+            dirs: dirs,
+            key: key,
+        })
+    }
+
+    pub fn from_key(name: &str, key: MineKey) -> Result<Mine> {
+        let dirs = xdg::BaseDirectories::with_prefix(name).unwrap();
+
+        let key_path = dirs.place_data_file("secret_key")
+            .chain_err(|| "could not place secret key")?;
+        let mut f = File::create(&key_path)
+            .chain_err(|| "failed to create secret key file")?;
+
+        rmp_serde::encode::write(&mut f, &key)
+            .chain_err(|| "failed to serialize key to disk")?;
+
+        Mine::new(name)
+    }
+
+    pub fn encrypt(&self, plaintext: &[u8]) -> Encrypted {
+        let nonce = secretbox::gen_nonce();
+        let ciphertext = secretbox::seal(plaintext, &nonce, &self.key.key);
+        Encrypted {
+            nonce: nonce,
+            ciphertext: ciphertext,
+        }
+    }
+
+    pub fn decrypt(&self, ciphertext: &Encrypted) -> Result<Vec<u8>> {
+        match secretbox::open(&ciphertext.ciphertext, &ciphertext.nonce, &self.key.key) {
+            Ok(plaintext) => Ok(plaintext),
+            Err(()) => Err("failed to decrypt".to_owned())?,
+        }
+    }
 }

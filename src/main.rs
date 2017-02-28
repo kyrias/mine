@@ -20,8 +20,13 @@ use clap::{Arg, App, AppSettings, SubCommand};
 
 
 mod errors {
+    extern crate mine;
     // Create the Error, ErrorKind, ResultExt, and Result types
-    error_chain! { }
+    error_chain! {
+        links {
+            MineLib(mine::errors::Error, mine::errors::ErrorKind);
+        }
+    }
 }
 
 use errors::*;
@@ -70,12 +75,11 @@ fn run() -> Result<()> {
     let subcommand = matches.subcommand_name().unwrap();
     let sub_matches = matches.subcommand_matches(subcommand).unwrap();
 
-    let dirs = xdg::BaseDirectories::with_prefix("mine").unwrap();
     match subcommand {
-        "init" => init::init_run(dirs)?,
-        "insert" => insert::insert_run(sub_matches, dirs)?,
-        "show" => show::show_run(sub_matches, dirs)?,
-        "set-tag" => set_tag::set_tag_run(sub_matches, dirs)?,
+        "init" => init::init_run()?,
+        "insert" => insert::insert_run(sub_matches)?,
+        "show" => show::show_run(sub_matches)?,
+        "set-tag" => set_tag::set_tag_run(sub_matches)?,
         _ => unreachable!(),
     }
 
