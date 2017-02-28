@@ -12,6 +12,7 @@ extern crate mine;
 
 mod init;
 mod insert;
+mod show;
 
 
 use clap::{Arg, App, AppSettings, SubCommand};
@@ -46,6 +47,12 @@ fn run() -> Result<()> {
                                 .arg(Arg::with_name("PASSWORD")
                                      .required(true)
                                      .index(2)))
+                    .subcommand(SubCommand::with_name("show")
+                                .about("show a password")
+                                .arg(Arg::with_name("NAME")
+                                     .help("Password name")
+                                     .required(true)
+                                     .index(1)))
                     .get_matches();
 
     let subcommand = matches.subcommand_name().unwrap();
@@ -55,6 +62,7 @@ fn run() -> Result<()> {
     match subcommand {
         "init" => init::init_run(dirs)?,
         "insert" => insert::insert_run(sub_matches, dirs)?,
+        "show" => show::show_run(sub_matches, dirs)?,
         _ => unreachable!(),
     }
 
