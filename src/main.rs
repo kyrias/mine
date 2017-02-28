@@ -13,6 +13,7 @@ extern crate mine;
 mod init;
 mod insert;
 mod show;
+mod set_tag;
 
 
 use clap::{Arg, App, AppSettings, SubCommand};
@@ -53,6 +54,17 @@ fn run() -> Result<()> {
                                      .help("Password name")
                                      .required(true)
                                      .index(1)))
+                    .subcommand(SubCommand::with_name("set-tag")
+                                .about("set a tag on a password")
+                                .arg(Arg::with_name("PASSWORD")
+                                     .required(true)
+                                     .index(1))
+                                .arg(Arg::with_name("TAG")
+                                     .required(true)
+                                     .index(2))
+                                .arg(Arg::with_name("VALUE")
+                                     .required(true)
+                                     .index(3)))
                     .get_matches();
 
     let subcommand = matches.subcommand_name().unwrap();
@@ -63,6 +75,7 @@ fn run() -> Result<()> {
         "init" => init::init_run(dirs)?,
         "insert" => insert::insert_run(sub_matches, dirs)?,
         "show" => show::show_run(sub_matches, dirs)?,
+        "set-tag" => set_tag::set_tag_run(sub_matches, dirs)?,
         _ => unreachable!(),
     }
 
