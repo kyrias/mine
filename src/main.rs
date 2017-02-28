@@ -11,9 +11,10 @@ extern crate mine;
 
 
 mod init;
+mod insert;
 
 
-use clap::{App, AppSettings, SubCommand};
+use clap::{Arg, App, AppSettings, SubCommand};
 
 
 mod errors {
@@ -37,13 +38,23 @@ fn run() -> Result<()> {
                     .setting(AppSettings::SubcommandRequired)
                     .subcommand(SubCommand::with_name("init")
                                 .about("initialize password store"))
+                    .subcommand(SubCommand::with_name("insert")
+                                .about("insert a password")
+                                .arg(Arg::with_name("NAME")
+                                     .required(true)
+                                     .index(1))
+                                .arg(Arg::with_name("PASSWORD")
+                                     .required(true)
+                                     .index(2)))
                     .get_matches();
 
     let subcommand = matches.subcommand_name().unwrap();
+    let sub_matches = matches.subcommand_matches(subcommand).unwrap();
 
     let dirs = xdg::BaseDirectories::with_prefix("mine").unwrap();
     match subcommand {
         "init" => init::init_run(dirs)?,
+        "insert" => insert::insert_run(sub_matches, dirs)?,
         _ => unreachable!(),
     }
 
