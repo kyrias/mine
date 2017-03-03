@@ -5,7 +5,7 @@ authors = ["Johannes Löthberg <johannes@kyriasis.com>"]
 
 [dependencies]
 clap = "^2.20"
-error-chain = "^0.7"
+error-chain = "^0.10"
 sodiumoxide = { git = "https://github.com/dnaq/sodiumoxide/" }
 serde = "^0.9.9"
 serde_derive = "^0.9.9"
