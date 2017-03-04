@@ -18,6 +18,8 @@ mod set_tag;
 
 use clap::{Arg, App, AppSettings, SubCommand};
 
+use mine::Mine;
+
 
 mod errors {
     extern crate mine;
@@ -72,14 +74,17 @@ fn run() -> Result<()> {
                                      .index(3)))
                     .get_matches();
 
+    let mine = Mine::new("mine")
+        .chain_err(|| "failed to initialize mine")?;
+
     let subcommand = matches.subcommand_name().unwrap();
     let sub_matches = matches.subcommand_matches(subcommand).unwrap();
 
     match subcommand {
-        "init" => init::init_run()?,
-        "insert" => insert::insert_run(sub_matches)?,
-        "show" => show::show_run(sub_matches)?,
-        "set-tag" => set_tag::set_tag_run(sub_matches)?,
+        "init" => init::init_run(mine)?,
+        "insert" => insert::insert_run(mine, sub_matches)?,
+        "show" => show::show_run(mine, sub_matches)?,
+        "set-tag" => set_tag::set_tag_run(mine, sub_matches)?,
         _ => unreachable!(),
     }
 

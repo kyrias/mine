@@ -10,7 +10,6 @@ extern crate rmp_serde;
 
 
 use std::fs::File;
-use std::path::Path;
 use std::collections::HashMap;
 
 use serde::Deserialize;
@@ -31,29 +30,6 @@ use errors::*;
 
 
 #[derive(Deserialize, Serialize, Debug)]
-pub struct MineKey {
-    pub key: secretbox::Key,
-}
-
-impl MineKey {
-    pub fn new() -> MineKey {
-        MineKey {
-            key: secretbox::gen_key(),
-        }
-    }
-
-    pub fn load_key<P: AsRef<Path>>(key_path: P) -> Result<MineKey> {
-        let f = File::open(&key_path).unwrap();
-        let mut de = rmp_serde::Deserializer::new(f);
-        let key: MineKey = Deserialize::deserialize(&mut de)?;
-
-        Ok(key)
-    }
-
-}
-
-
-#[derive(Deserialize, Serialize, Debug)]
 pub struct Password {
     pub password: String,
     pub tags: HashMap<String, String>,
@@ -68,49 +44,69 @@ pub struct Encrypted {
 
 pub struct Mine {
     pub dirs: xdg::BaseDirectories,
-    key: MineKey,
+    key: Option<secretbox::Key>,
 }
 
 impl Mine {
     pub fn new(name: &str) -> Result<Mine> {
         let dirs = xdg::BaseDirectories::with_prefix(name).unwrap();
 
-        let key_path = dirs.find_data_file("secret_key")
-            .ok_or("could not find secret key")?;
-        let key = MineKey::load_key(key_path.as_path())
-            .chain_err(|| "failed to load private key")?;
-
         Ok(Mine {
             dirs: dirs,
-            key: key,
+            key: None,
         })
     }
 
-    pub fn from_key(name: &str, key: MineKey) -> Result<Mine> {
-        let dirs = xdg::BaseDirectories::with_prefix(name).unwrap();
+    pub fn generate_key(&mut self) -> Result<()> {
+        match self.key {
+            Some(_) => Err("Mine instance already has a key".to_owned())?,
+            None    => {
+                let key = secretbox::gen_key();
+                self.key = Some(key);
+                Ok(())
+            },
+        }
+    }
 
-        let key_path = dirs.place_data_file("secret_key")
+    pub fn save(&self) -> Result<()> {
+        let key_path = self.dirs.place_data_file("secret_key")
             .chain_err(|| "could not place secret key")?;
         let mut f = File::create(&key_path)
             .chain_err(|| "failed to create secret key file")?;
 
-        rmp_serde::encode::write(&mut f, &key)
+        rmp_serde::encode::write(&mut f, &self.key)
             .chain_err(|| "failed to serialize key to disk")?;
 
-        Mine::new(name)
+        Ok(())
     }
 
-    pub fn encrypt(&self, plaintext: &[u8]) -> Encrypted {
+    pub fn load(&mut self) -> Result<()> {
+        let key_path = self.dirs.find_data_file("secret_key")
+            .ok_or("could not find secret key")?;
+
+        let f = File::open(&key_path).unwrap();
+        let mut de = rmp_serde::Deserializer::new(f);
+        let key: secretbox::Key = Deserialize::deserialize(&mut de)
+            .chain_err(|| "failed to deserialize private key")?;
+
+        self.key = Some(key);
+
+        Ok(())
+    }
+
+    pub fn encrypt(&self, plaintext: &[u8]) -> Result<Encrypted> {
         let nonce = secretbox::gen_nonce();
-        let ciphertext = secretbox::seal(plaintext, &nonce, &self.key.key);
-        Encrypted {
+        let key = self.key.as_ref().ok_or("no private key available")?;
+        let ciphertext = secretbox::seal(plaintext, &nonce, &key);
+        Ok(Encrypted {
             nonce: nonce,
             ciphertext: ciphertext,
-        }
+        })
     }
 
     pub fn decrypt(&self, ciphertext: &Encrypted) -> Result<Vec<u8>> {
-        match secretbox::open(&ciphertext.ciphertext, &ciphertext.nonce, &self.key.key) {
+        let key = self.key.as_ref().ok_or("no private key available")?;
+        match secretbox::open(&ciphertext.ciphertext, &ciphertext.nonce, &key) {
             Ok(plaintext) => Ok(plaintext),
             Err(()) => Err("failed to decrypt".to_owned())?,
         }

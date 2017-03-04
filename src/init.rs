@@ -7,13 +7,13 @@ extern crate xdg;
 extern crate mine;
 
 
-use mine::{Mine, MineKey};
+use mine::Mine;
 use ::errors::*;
 
 
-pub fn init_run() -> Result<()> {
-    let key: MineKey = MineKey::new();
-    Mine::from_key("mine", key)?;
+pub fn init_run(mut mine: Mine) -> Result<()> {
+    mine.generate_key()?;
+    mine.save()?;
 
     println!("==> Wrote secret key to disk");
 

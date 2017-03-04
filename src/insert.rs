@@ -18,9 +18,9 @@ use mine::{Mine, Encrypted, Password};
 use ::errors::*;
 
 
-pub fn insert_run(matches: &ArgMatches) -> Result<()> {
-    let mine = Mine::new("mine")
-        .chain_err(|| "failed to initialize mine")?;
+pub fn insert_run(mut mine: Mine, matches: &ArgMatches) -> Result<()> {
+    mine.load()
+        .chain_err(|| "failed to load private key")?;
 
     let password = Password {
         password: matches.value_of("PASSWORD").unwrap().to_owned(),
@@ -29,7 +29,8 @@ pub fn insert_run(matches: &ArgMatches) -> Result<()> {
     let encoded = rmp_serde::encode::to_vec(&password)
         .chain_err(|| "failed to encode password struct")?;
 
-    let encrypted: Encrypted = mine.encrypt(&encoded[..]);
+    let encrypted: Encrypted = mine.encrypt(&encoded[..])
+        .chain_err(|| "failed to encrypt password")?;
 
 
     let name = matches.value_of("NAME").unwrap();

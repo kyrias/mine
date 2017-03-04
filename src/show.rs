@@ -18,9 +18,9 @@ use mine::{Mine, Encrypted, Password};
 use ::errors::*;
 
 
-pub fn show_run(matches: &ArgMatches) -> Result<()> {
-    let mine = Mine::new("mine")
-        .chain_err(|| "failed to initialize mine")?;
+pub fn show_run(mut mine: Mine, matches: &ArgMatches) -> Result<()> {
+    mine.load()
+        .chain_err(|| "failed to load private key")?;
 
 
     let name = matches.value_of("NAME").unwrap();

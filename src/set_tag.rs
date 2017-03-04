@@ -18,9 +18,9 @@ use mine::{Mine, Encrypted, Password};
 use ::errors::*;
 
 
-pub fn set_tag_run(matches: &ArgMatches) -> Result<()> {
-    let mine = Mine::new("mine")
-        .chain_err(|| "failed to initialize mine")?;
+pub fn set_tag_run(mut mine: Mine, matches: &ArgMatches) -> Result<()> {
+    mine.load()
+        .chain_err(|| "failed to load private key")?;
 
 
     let password = matches.value_of("PASSWORD").unwrap();
@@ -47,7 +47,8 @@ pub fn set_tag_run(matches: &ArgMatches) -> Result<()> {
     let encoded = rmp_serde::encode::to_vec(&password)
         .chain_err(|| "failed to encode password struct")?;
 
-    let encrypted: Encrypted = mine.encrypt(&encoded[..]);
+    let encrypted: Encrypted = mine.encrypt(&encoded[..])
+        .chain_err(|| "failed to re-encrypt password")?;
 
     let mut f = File::create(&pass_path)
         .chain_err(|| "unable to open password file")?;
