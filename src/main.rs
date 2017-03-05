@@ -41,8 +41,12 @@ fn run() -> Result<()> {
 
     let matches = cli().get_matches();
 
-    let mine = Mine::new("mine")
+    let mut mine = Mine::new("mine")
         .chain_err(|| "failed to initialize mine")?;
+    if matches.subcommand_name().unwrap() != "init" {
+        mine.load()
+            .chain_err(|| "failed to load secret key")?;
+    }
 
     match matches.subcommand() {
         ("init", Some(_)) => {

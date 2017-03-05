@@ -18,11 +18,7 @@ use mine::{Mine, Encrypted, Password};
 use ::errors::*;
 
 
-pub fn show_run(mut mine: Mine, matches: &ArgMatches) -> Result<()> {
-    mine.load()
-        .chain_err(|| "failed to load secret key")?;
-
-
+pub fn show_run(mine: Mine, matches: &ArgMatches) -> Result<()> {
     let name = matches.value_of("NAME").unwrap();
     let pass_path = mine.dirs.find_data_file(Path::new("store").join(name))
         .ok_or("cannot find password file")?;

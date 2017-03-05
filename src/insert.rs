@@ -18,10 +18,7 @@ use mine::{Mine, Encrypted, Password};
 use ::errors::*;
 
 
-pub fn insert_run(mut mine: Mine, matches: &ArgMatches) -> Result<()> {
-    mine.load()
-        .chain_err(|| "failed to load secret key")?;
-
+pub fn insert_run(mine: Mine, matches: &ArgMatches) -> Result<()> {
     let password = Password {
         password: matches.value_of("PASSWORD").unwrap().to_owned(),
         tags: HashMap::new(),
