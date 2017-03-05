@@ -44,6 +44,7 @@ fn run() -> Result<()> {
                     .version("0.0.0")
                     .author("Johannes Löthberg <johannes@kyriasis.com>")
                     .about("NaCL based password manager in Rust")
+                    .global_settings(&[AppSettings::ColoredHelp])
                     .setting(AppSettings::SubcommandRequired)
                     .subcommand(SubCommand::with_name("init")
                                 .about("initialize password store"))
