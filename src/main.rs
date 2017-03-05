@@ -63,7 +63,7 @@ fn run() -> Result<()> {
 
 fn cli() -> App<'static, 'static> {
     App::new("mine")
-        .version("0.0.0")
+        .version("0.0.1")
         .author("Johannes Löthberg <johannes@kyriasis.com>")
         .about("NaCL based password manager in Rust")
         .global_settings(&[AppSettings::ColoredHelp])
