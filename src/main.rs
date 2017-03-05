@@ -63,7 +63,7 @@ fn run() -> Result<()> {
 
 fn cli() -> App<'static, 'static> {
     App::new("mine")
-        .version("0.0.1")
+        .version(version())
         .author("Johannes Löthberg <johannes@kyriasis.com>")
         .about("NaCL based password manager in Rust")
         .global_settings(&[AppSettings::ColoredHelp])
@@ -100,4 +100,8 @@ fn cli() -> App<'static, 'static> {
                     .setting(AppSettings::ArgRequiredElseHelp)
                     .arg(Arg::with_name("shell")
                          .possible_values(&Shell::variants())))
+}
+
+fn version() -> &'static str {
+    include_str!(concat!(env!("OUT_DIR"), "/version-info.txt"))
 }
