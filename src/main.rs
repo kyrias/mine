@@ -78,15 +78,12 @@ fn run() -> Result<()> {
     let mine = Mine::new("mine")
         .chain_err(|| "failed to initialize mine")?;
 
-    let subcommand = matches.subcommand_name().unwrap();
-    let sub_matches = matches.subcommand_matches(subcommand).unwrap();
-
-    match subcommand {
-        "init" => init::init_run(mine)?,
-        "insert" => insert::insert_run(mine, sub_matches)?,
-        "show" => show::show_run(mine, sub_matches)?,
-        "set-tag" => set_tag::set_tag_run(mine, sub_matches)?,
-        _ => unreachable!(),
+    match matches.subcommand() {
+        ("init", Some(_)) => init::init_run(mine)?,
+        ("insert", Some(m)) => insert::insert_run(mine, m)?,
+        ("show", Some(m)) => show::show_run(mine, m)?,
+        ("set-tag", Some(m)) => set_tag::set_tag_run(mine, m)?,
+        (_, _) => unreachable!(),
     }
 
     Ok(())
