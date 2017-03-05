@@ -10,7 +10,6 @@ extern crate xdg;
 extern crate mine;
 
 
-mod init;
 mod insert;
 mod show;
 mod set_tag;
@@ -46,7 +45,11 @@ fn run() -> Result<()> {
         .chain_err(|| "failed to initialize mine")?;
 
     match matches.subcommand() {
-        ("init", Some(_)) => init::init_run(mine)?,
+        ("init", Some(_)) => {
+            mine.generate_key()?;
+            mine.save()?;
+            println!("==> Successfully wrote new secret key to disk!");
+        }
         ("insert", Some(m)) => insert::insert_run(mine, m)?,
         ("show", Some(m)) => show::show_run(mine, m)?,
         ("set-tag", Some(m)) => set_tag::set_tag_run(mine, m)?,
