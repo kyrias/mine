@@ -40,7 +40,24 @@ quick_main!(run);
 fn run() -> Result<()> {
     sodiumoxide::init();
 
-    let matches = App::new("mine")
+    let matches = cli().get_matches();
+
+    let mine = Mine::new("mine")
+        .chain_err(|| "failed to initialize mine")?;
+
+    match matches.subcommand() {
+        ("init", Some(_)) => init::init_run(mine)?,
+        ("insert", Some(m)) => insert::insert_run(mine, m)?,
+        ("show", Some(m)) => show::show_run(mine, m)?,
+        ("set-tag", Some(m)) => set_tag::set_tag_run(mine, m)?,
+        (_, _) => unreachable!(),
+    }
+
+    Ok(())
+}
+
+fn cli() -> App<'static, 'static> {
+    App::new("mine")
         .version("0.0.0")
         .author("Johannes Löthberg <johannes@kyriasis.com>")
         .about("NaCL based password manager in Rust")
@@ -73,19 +90,4 @@ fn run() -> Result<()> {
                     .arg(Arg::with_name("VALUE")
                          .required(true)
                          .index(3)))
-        .get_matches();
-
-    let mine = Mine::new("mine")
-        .chain_err(|| "failed to initialize mine")?;
-
-    match matches.subcommand() {
-        ("init", Some(_)) => init::init_run(mine)?,
-        ("insert", Some(m)) => insert::insert_run(mine, m)?,
-        ("show", Some(m)) => show::show_run(mine, m)?,
-        ("set-tag", Some(m)) => set_tag::set_tag_run(mine, m)?,
-        (_, _) => unreachable!(),
-    }
-
-    Ok(())
 }
-
