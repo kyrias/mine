@@ -20,7 +20,8 @@ use ::errors::*;
 
 pub fn set_tag_run(mine: Mine, matches: &ArgMatches) -> Result<()> {
     let password = matches.value_of("PASSWORD").unwrap();
-    let pass_path = mine.dirs.find_data_file(Path::new("store").join(password))
+    let pass_path = mine.dirs
+        .find_data_file(Path::new("store").join(password))
         .ok_or("cannot find password file")?;
 
 
@@ -55,4 +56,3 @@ pub fn set_tag_run(mine: Mine, matches: &ArgMatches) -> Result<()> {
 
     Ok(())
 }
-

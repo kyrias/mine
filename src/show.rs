@@ -20,7 +20,8 @@ use ::errors::*;
 
 pub fn show_run(mine: Mine, matches: &ArgMatches) -> Result<()> {
     let name = matches.value_of("NAME").unwrap();
-    let pass_path = mine.dirs.find_data_file(Path::new("store").join(name))
+    let pass_path = mine.dirs
+        .find_data_file(Path::new("store").join(name))
         .ok_or("cannot find password file")?;
 
     let f = File::open(&pass_path).chain_err(|| "unable to open password file")?;
@@ -35,8 +36,7 @@ pub fn show_run(mine: Mine, matches: &ArgMatches) -> Result<()> {
     println!("{}", password.password);
     for (key, value) in password.tags.iter() {
         println!("{} => {}", key, value);
-    };
+    }
 
     Ok(())
 }
-

@@ -31,7 +31,8 @@ pub fn insert_run(mine: Mine, matches: &ArgMatches) -> Result<()> {
 
 
     let name = matches.value_of("NAME").unwrap();
-    let pass_path = mine.dirs.place_data_file(Path::new("store").join(name))
+    let pass_path = mine.dirs
+        .place_data_file(Path::new("store").join(name))
         .chain_err(|| "cannot place password file")?;
 
 

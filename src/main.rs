@@ -59,7 +59,9 @@ fn run() -> Result<()> {
         ("set-tag", Some(m)) => set_tag::set_tag_run(mine, m)?,
         ("completions", Some(m)) => {
             if let Some(shell) = m.value_of("shell") {
-                cli().gen_completions_to("mine", shell.parse::<Shell>().unwrap(), &mut std::io::stdout());
+                cli().gen_completions_to("mine",
+                                         shell.parse::<Shell>().unwrap(),
+                                         &mut std::io::stdout());
             }
         }
         (_, _) => unreachable!(),
@@ -78,35 +80,35 @@ fn cli() -> App<'static, 'static> {
         .subcommand(SubCommand::with_name("init")
                     .about("initialize password store"))
         .subcommand(SubCommand::with_name("insert")
-                    .about("insert a password")
-                    .arg(Arg::with_name("NAME")
-                         .required(true)
-                         .index(1))
-                    .arg(Arg::with_name("PASSWORD")
-                         .required(true)
-                         .index(2)))
+            .about("insert a password")
+            .arg(Arg::with_name("NAME")
+                .required(true)
+                .index(1))
+            .arg(Arg::with_name("PASSWORD")
+                .required(true)
+                .index(2)))
         .subcommand(SubCommand::with_name("show")
-                    .about("show a password")
-                    .arg(Arg::with_name("NAME")
-                         .help("Password name")
-                         .required(true)
-                         .index(1)))
+            .about("show a password")
+            .arg(Arg::with_name("NAME")
+                .help("Password name")
+                .required(true)
+                .index(1)))
         .subcommand(SubCommand::with_name("set-tag")
-                    .about("set a tag on a password")
-                    .arg(Arg::with_name("PASSWORD")
-                         .required(true)
-                         .index(1))
-                    .arg(Arg::with_name("TAG")
-                         .required(true)
-                         .index(2))
-                    .arg(Arg::with_name("VALUE")
-                         .required(true)
-                         .index(3)))
+            .about("set a tag on a password")
+            .arg(Arg::with_name("PASSWORD")
+                .required(true)
+                .index(1))
+            .arg(Arg::with_name("TAG")
+                .required(true)
+                .index(2))
+            .arg(Arg::with_name("VALUE")
+                .required(true)
+                .index(3)))
         .subcommand(SubCommand::with_name("completions")
-                    .about("generate shell completion scripts")
-                    .setting(AppSettings::ArgRequiredElseHelp)
-                    .arg(Arg::with_name("shell")
-                         .possible_values(&Shell::variants())))
+            .about("generate shell completion scripts")
+            .setting(AppSettings::ArgRequiredElseHelp)
+            .arg(Arg::with_name("shell")
+                 .possible_values(&Shell::variants())))
 }
 
 fn version() -> &'static str {

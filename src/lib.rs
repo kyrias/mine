@@ -60,16 +60,17 @@ impl Mine {
     pub fn generate_key(&mut self) -> Result<()> {
         match self.key {
             Some(_) => Err("Mine instance already has a key".to_owned())?,
-            None    => {
+            None => {
                 let key = secretbox::gen_key();
                 self.key = Some(key);
                 Ok(())
-            },
+            }
         }
     }
 
     pub fn save(&self) -> Result<()> {
-        let key_path = self.dirs.place_data_file("secret_key")
+        let key_path = self.dirs
+            .place_data_file("secret_key")
             .chain_err(|| "could not place secret key")?;
         let mut f = File::create(&key_path)
             .chain_err(|| "failed to create secret key file")?;
@@ -81,7 +82,8 @@ impl Mine {
     }
 
     pub fn load(&mut self) -> Result<()> {
-        let key_path = self.dirs.find_data_file("secret_key")
+        let key_path = self.dirs
+            .find_data_file("secret_key")
             .ok_or("could not find secret key")?;
 
         let f = File::open(&key_path).unwrap();
