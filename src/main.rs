@@ -16,7 +16,7 @@ mod show;
 mod set_tag;
 
 
-use clap::{Arg, App, AppSettings, SubCommand};
+use clap::{Arg, App, AppSettings, Shell, SubCommand};
 
 use mine::Mine;
 
@@ -50,6 +50,11 @@ fn run() -> Result<()> {
         ("insert", Some(m)) => insert::insert_run(mine, m)?,
         ("show", Some(m)) => show::show_run(mine, m)?,
         ("set-tag", Some(m)) => set_tag::set_tag_run(mine, m)?,
+        ("completions", Some(m)) => {
+            if let Some(shell) = m.value_of("shell") {
+                cli().gen_completions_to("mine", shell.parse::<Shell>().unwrap(), &mut std::io::stdout());
+            }
+        }
         (_, _) => unreachable!(),
     }
 
@@ -90,4 +95,9 @@ fn cli() -> App<'static, 'static> {
                     .arg(Arg::with_name("VALUE")
                          .required(true)
                          .index(3)))
+        .subcommand(SubCommand::with_name("completions")
+                    .about("generate shell completion scripts")
+                    .setting(AppSettings::ArgRequiredElseHelp)
+                    .arg(Arg::with_name("shell")
+                         .possible_values(&Shell::variants())))
 }
