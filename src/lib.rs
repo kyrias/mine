@@ -87,7 +87,7 @@ impl Mine {
         let f = File::open(&key_path).unwrap();
         let mut de = rmp_serde::Deserializer::new(f);
         let key: secretbox::Key = Deserialize::deserialize(&mut de)
-            .chain_err(|| "failed to deserialize private key")?;
+            .chain_err(|| "failed to deserialize secret key")?;
 
         self.key = Some(key);
 
@@ -96,7 +96,7 @@ impl Mine {
 
     pub fn encrypt(&self, plaintext: &[u8]) -> Result<Encrypted> {
         let nonce = secretbox::gen_nonce();
-        let key = self.key.as_ref().ok_or("no private key available")?;
+        let key = self.key.as_ref().ok_or("no secret key available")?;
         let ciphertext = secretbox::seal(plaintext, &nonce, &key);
         Ok(Encrypted {
             nonce: nonce,
@@ -105,7 +105,7 @@ impl Mine {
     }
 
     pub fn decrypt(&self, ciphertext: &Encrypted) -> Result<Vec<u8>> {
-        let key = self.key.as_ref().ok_or("no private key available")?;
+        let key = self.key.as_ref().ok_or("no secret key available")?;
         match secretbox::open(&ciphertext.ciphertext, &ciphertext.nonce, &key) {
             Ok(plaintext) => Ok(plaintext),
             Err(()) => Err("failed to decrypt".to_owned())?,

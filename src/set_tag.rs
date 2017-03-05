@@ -20,7 +20,7 @@ use ::errors::*;
 
 pub fn set_tag_run(mut mine: Mine, matches: &ArgMatches) -> Result<()> {
     mine.load()
-        .chain_err(|| "failed to load private key")?;
+        .chain_err(|| "failed to load secret key")?;
 
 
     let password = matches.value_of("PASSWORD").unwrap();

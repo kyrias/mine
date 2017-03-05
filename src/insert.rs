@@ -20,7 +20,7 @@ use ::errors::*;
 
 pub fn insert_run(mut mine: Mine, matches: &ArgMatches) -> Result<()> {
     mine.load()
-        .chain_err(|| "failed to load private key")?;
+        .chain_err(|| "failed to load secret key")?;
 
     let password = Password {
         password: matches.value_of("PASSWORD").unwrap().to_owned(),
