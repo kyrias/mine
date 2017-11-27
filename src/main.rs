@@ -1,116 +1,116 @@
-#[macro_use]
-extern crate error_chain;
+extern crate rand;
+extern crate sequence_trie;
 
-extern crate clap;
-extern crate serde;
-extern crate rmp_serde;
-extern crate sodiumoxide;
-extern crate xdg;
+use std::fs::{self, File};
+use std::io::prelude::*;
 
-extern crate mine;
+use rand::{thread_rng, Rng};
+use sequence_trie::SequenceTrie;
 
 
-mod insert;
-mod show;
-mod set_tag;
+struct Mapper {
+    st: SequenceTrie<String, String>,
+}
 
+impl Mapper {
+    fn new() -> Mapper {
+        Mapper { st: SequenceTrie::new() }
+    }
 
-use clap::{Arg, App, AppSettings, Shell, SubCommand};
+    fn insert(&mut self, path: &str) -> String {
+        let random: String = thread_rng().gen_ascii_chars().take(100).collect();
+        let parts = split_path(path);
+        self.st.insert(&parts, random.clone());
+        random
+    }
 
-use mine::Mine;
+    fn remove(&mut self, path: &str) {
+        let parts = split_path(path);
+        self.st.remove(&parts);
+    }
 
+    fn find(&self, path: &str) -> Option<String> {
+        let parts = split_path(path);
+        self.st.get(&parts).cloned()
+    }
 
-mod errors {
-    extern crate mine;
-    // Create the Error, ErrorKind, ResultExt, and Result types
-    error_chain! {
-        links {
-            MineLib(mine::errors::Error, mine::errors::ErrorKind);
+    fn list(&self, path: &str) -> Option<Vec<String>> {
+        let parts = split_path(path);
+        match self.st.get_node(&parts) {
+            Some(node) => {
+                let children_with_keys = node.children_with_keys();
+                let keys: Vec<String> = children_with_keys.iter().map(|&(k, _)| k.to_string()).collect();
+                Some(keys)
+            },
+            None     => None,
         }
     }
 }
 
-use errors::*;
-
-
-quick_main!(run);
-
-
-fn run() -> Result<()> {
-    sodiumoxide::init();
-
-    let matches = cli().get_matches();
-
-    let mut mine = Mine::new("mine")
-        .chain_err(|| "failed to initialize mine")?;
-    if matches.subcommand_name().unwrap() != "init" {
-        mine.load()
-            .chain_err(|| "failed to load secret key")?;
-    }
-
-    match matches.subcommand() {
-        ("init", Some(_)) => {
-            mine.generate_key()?;
-            mine.save()?;
-            println!("==> Successfully wrote new secret key to disk!");
-        }
-        ("insert", Some(m)) => insert::insert_run(mine, m)?,
-        ("show", Some(m)) => show::show_run(mine, m)?,
-        ("set-tag", Some(m)) => set_tag::set_tag_run(mine, m)?,
-        ("completions", Some(m)) => {
-            if let Some(shell) = m.value_of("shell") {
-                cli().gen_completions_to("mine",
-                                         shell.parse::<Shell>().unwrap(),
-                                         &mut std::io::stdout());
-            }
-        }
-        (_, _) => unreachable!(),
-    }
-
-    Ok(())
+fn split_path(path: &str) -> Vec<String> {
+    path.split("/").map(|v| v.to_string()).filter(|v| !v.is_empty()).collect()
 }
 
-fn cli() -> App<'static, 'static> {
-    App::new("mine")
-        .version(version())
-        .author("Johannes Löthberg <johannes@kyriasis.com>")
-        .about("NaCL based password manager in Rust")
-        .global_settings(&[AppSettings::ColoredHelp])
-        .setting(AppSettings::SubcommandRequiredElseHelp)
-        .subcommand(SubCommand::with_name("init")
-                    .about("initialize password store"))
-        .subcommand(SubCommand::with_name("insert")
-            .about("insert a password")
-            .arg(Arg::with_name("NAME")
-                .required(true)
-                .index(1))
-            .arg(Arg::with_name("PASSWORD")
-                .required(true)
-                .index(2)))
-        .subcommand(SubCommand::with_name("show")
-            .about("show a password")
-            .arg(Arg::with_name("NAME")
-                .help("Password name")
-                .required(true)
-                .index(1)))
-        .subcommand(SubCommand::with_name("set-tag")
-            .about("set a tag on a password")
-            .arg(Arg::with_name("PASSWORD")
-                .required(true)
-                .index(1))
-            .arg(Arg::with_name("TAG")
-                .required(true)
-                .index(2))
-            .arg(Arg::with_name("VALUE")
-                .required(true)
-                .index(3)))
-        .subcommand(SubCommand::with_name("completions")
-            .about("generate shell completion scripts")
-            .setting(AppSettings::ArgRequiredElseHelp)
-            .arg(Arg::with_name("shell")
-                 .possible_values(&Shell::variants())))
+struct Repository {
+    mapper: Mapper,
 }
 
-fn version() -> &'static str {
-    include_str!(concat!(env!("OUT_DIR"), "/version-info.txt"))
+impl Repository {
+    fn new() -> Repository {
+        Repository { mapper: Mapper::new() }
+    }
+
+    fn insert(&mut self, path: &str, content: &[u8]) {
+        let filename = self.mapper.insert(path);
+        fs::create_dir("passrep");
+        let mut file = File::create(format!("passrep/{}", filename)).unwrap();
+        file.write_all(content).unwrap();
+    }
+
+    fn get(&self, path: &str) -> Option<Vec<u8>> {
+        let filename = self.mapper.find(&path).unwrap();
+        let mut file = File::open(format!("passrep/{}", filename)).unwrap();
+        let mut buf = Vec::new();
+        file.read_to_end(&mut buf);
+        Some(buf)
+    }
+
+    fn delete(&mut self, path: &str) {
+        let filename = self.mapper.find(&path).unwrap();
+        self.mapper.remove(&path);
+        fs::remove_file(format!("passrep/{}", filename)).unwrap();
+    }
+}
+
+fn main() {
+    let mut repo = Repository::new();
+    repo.insert("foo/bar", &[1,2,3,4]);
+    println!("{:?}", repo.get("foo/bar"));
+    repo.delete("foo/bar");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Mapper;
+
+    #[test]
+    fn exists_after_insert() {
+        let mut m = Mapper::new();
+        m.insert("foo");
+
+        let entries = m.list("");
+        assert_eq!(entries.is_some(), true);
+        assert!(entries.unwrap().iter().any(|e| e == "foo"));
+    }
+
+    #[test]
+    fn gone_after_remove(){
+        let mut m = Mapper::new();
+        m.insert("foo");
+        m.remove("foo");
+
+        let entries = m.list("");
+        assert_eq!(entries.is_some(), true);
+        assert!(entries.unwrap().is_empty());
+    }
 }
