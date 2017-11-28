@@ -59,7 +59,7 @@ impl Mapper {
                 let keys: Vec<String> = children_with_keys.iter().map(|&(k, _)| k.to_string()).collect();
                 Some(keys)
             },
-            None     => None,
+            None => None,
         }
     }
 }
