@@ -8,8 +8,12 @@ use mine::Repository;
 
 
 mod errors {
-    // Create the Error, ErrorKind, ResultExt, and Result types
-    error_chain! { }
+    use super::mine;
+    error_chain! {
+        links {
+            Mine(mine::Error, mine::ErrorKind);
+        }
+    }
 }
 
 use errors::*;
