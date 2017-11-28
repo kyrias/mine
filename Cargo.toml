@@ -6,3 +6,4 @@ authors = ["Johannes Löthberg <johannes@kyriasis.com>"]
 [dependencies]
 rand = "^0.3"
 sequence_trie = { git = "https://github.com/kyrias/rust_sequence_trie", branch = "serde" }
+error-chain = "^0.11.0"
