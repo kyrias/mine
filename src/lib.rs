@@ -88,6 +88,11 @@ impl Repository {
         Ok(buf)
     }
 
+    pub fn list(&self, path: &str) -> Option<Vec<String>> {
+        let files = self.mapper.list(&path);
+        files
+    }
+
     pub fn delete(&mut self, path: &str) -> Result<()> {
         let filename = self.mapper.find(&path).chain_err(|| "Could not find Mapper entry")?;
         self.mapper.remove(&path);
