@@ -1,18 +1,14 @@
 #[macro_use] extern crate error_chain;
+extern crate sequence_trie;
+extern crate rand;
 
-extern crate repository;
-
+mod repository;
 
 use repository::Repository;
 
 
 mod errors {
-    use super::repository;
-    error_chain! {
-        links {
-            Repository(repository::Error, repository::ErrorKind);
-        }
-    }
+    error_chain! {}
 }
 
 use errors::*;

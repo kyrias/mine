@@ -1,6 +1,4 @@
 //! Contains the mine filesystem helper
-#[macro_use] extern crate error_chain;
-extern crate rand;
 extern crate sequence_trie;
 
 
@@ -9,12 +7,7 @@ use std::io::{Read, Write};
 use rand::{thread_rng, Rng};
 use sequence_trie::SequenceTrie;
 
-
-mod errors {
-    error_chain! {}
-}
-
-pub use errors::*;
+use super::errors::*;
 
 
 fn split_path(path: &str) -> Vec<String> {
@@ -85,7 +78,7 @@ impl Mapper {
 /// TODO: Implement a `fsck` function that checks that all index entries exist on disk, and that
 /// all on-disk entries exist in the index.
 ///
-/// [`SequenceTrie`]: ../sequence_trie/struct.SequenceTrie.html
+/// [`SequenceTrie`]: ../../sequence_trie/struct.SequenceTrie.html
 /// [`pass(1)`]: https://www.passwordstore.org/
 pub struct Repository {
     mapper: Mapper,
