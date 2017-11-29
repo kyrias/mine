@@ -110,6 +110,22 @@ impl Repository {
         Ok(repo)
     }
 
+    /// Deserializes a JSON serialized Repository index.
+    pub fn deserialize<P: AsRef<Path>>(serialized: &[u8], path: P) -> Result<Repository> {
+        let mapper: Mapper = serde_json::from_slice(serialized)
+            .chain_err(|| "Failed to deserialize Repository from JSON")?;
+        Ok(Repository {
+            repo_path: path.as_ref().join("repository"),
+            mapper: mapper,
+        })
+    }
+
+    /// Serializes a Repository index to a JSON byte vector.
+    pub fn serialize(&self) -> Result<Vec<u8>> {
+        serde_json::to_vec(&self.mapper)
+            .chain_err(|| "Failed to serialize Repository to JSON")
+    }
+
     /// Create the repository directory if it doesn't already exist.
     fn create_repo(&self) -> Result<()> {
         let repo = &self.repo_path;
