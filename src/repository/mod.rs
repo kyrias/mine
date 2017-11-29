@@ -8,7 +8,7 @@
 extern crate sequence_trie;
 extern crate serde_json;
 
-
+use std::path::{Path, PathBuf};
 use std::fs::{self, File};
 use std::io::{Read, Write};
 use rand::{thread_rng, Rng};
@@ -92,6 +92,7 @@ impl Mapper {
 /// [`pass(1)`]: https://www.passwordstore.org/
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Repository {
+    repo_path: PathBuf,
     mapper: Mapper,
 }
 
@@ -100,8 +101,25 @@ impl Repository {
     ///
     /// TODO: This should take a path to create the repository in, and open the existing index if
     /// it already exists.
-    pub fn new() -> Repository {
-        Repository { mapper: Mapper::new() }
+    pub fn new<P: AsRef<Path>>(path: P) -> Result<Repository> {
+        let repo = Repository {
+            repo_path: path.as_ref().join("repository"),
+            mapper: Mapper::new()
+        };
+        repo.create_repo()?;
+        Ok(repo)
+    }
+
+    /// Create the repository directory if it doesn't already exist.
+    fn create_repo(&self) -> Result<()> {
+        let repo = &self.repo_path;
+        if repo.exists() && !repo.is_dir() {
+            return Err(format!("Repository path '{}' already exists and isn't a directory", repo.display()).into())
+        }
+        if !repo.exists() {
+            fs::create_dir_all(repo).chain_err(|| "Failed to create repository path")?;
+        }
+        Ok(())
     }
 
     /// Inserts the given path into the index and then writes the contents of the byte slice to
@@ -110,17 +128,29 @@ impl Repository {
     /// NOTE: This does not serialize the repository index to disk as well, so if we forget to do
     /// that we'll lose track of the new file in the repository directory.
     pub fn insert(&mut self, path: &str, content: &[u8]) -> Result<()> {
+        fs::create_dir_all(&self.repo_path)
+            .chain_err(|| "Failed to create repository directory")?;
         let filename = self.mapper.insert(path);
-        fs::create_dir_all("passrep").chain_err(|| "Failed to create repository directory")?;
-        let mut file = File::create(format!("passrep/{}", filename)).chain_err(|| "Failed to create file")?;
+        let filepath = self.repo_path.join(filename);
+        let mut file = File::create(filepath).chain_err(|| "Failed to create file")?;
         file.write_all(content).chain_err(|| "Failed to write content to disk")?;
+        Ok(())
+    }
+
+    /// Delete an entry from the index and from disk.
+    pub fn delete(&mut self, path: &str) -> Result<()> {
+        let filename = self.mapper.find(&path).chain_err(|| "Could not find Mapper entry")?;
+        let filepath = self.repo_path.join(filename);
+        self.mapper.remove(&path);
+        fs::remove_file(filepath).chain_err(|| "Failed to remove file")?;
         Ok(())
     }
 
     /// Look up the given path in the index and then return the contents of the on-disk entry.
     pub fn get(&self, path: &str) -> Result<Vec<u8>> {
         let filename = self.mapper.find(&path).chain_err(|| "Could not find Mapper entry")?;
-        let mut file = File::open(format!("passrep/{}", filename)).chain_err(|| "Failed to open file")?;
+        let filepath = self.repo_path.join(filename);
+        let mut file = File::open(filepath).chain_err(|| "Failed to open file")?;
         let mut buf = Vec::new();
         file.read_to_end(&mut buf).chain_err(|| "Could not read file content")?;
         Ok(buf)
@@ -130,14 +160,6 @@ impl Repository {
     pub fn list(&self, path: &str) -> Option<Vec<String>> {
         let files = self.mapper.list(&path);
         files
-    }
-
-    /// Delete an entry from the index and from disk.
-    pub fn delete(&mut self, path: &str) -> Result<()> {
-        let filename = self.mapper.find(&path).chain_err(|| "Could not find Mapper entry")?;
-        self.mapper.remove(&path);
-        fs::remove_file(format!("passrep/{}", filename)).chain_err(|| "Failed to remove file")?;
-        Ok(())
     }
 }
 
