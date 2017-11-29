@@ -2,7 +2,7 @@
 extern crate sequence_trie;
 extern crate rand;
 
-mod repository;
+pub mod repository;
 
 use repository::Repository;
 
