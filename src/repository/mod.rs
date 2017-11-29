@@ -1,5 +1,6 @@
 //! Contains the mine filesystem helper
 extern crate sequence_trie;
+extern crate serde_json;
 
 
 use std::fs::{self, File};
@@ -18,6 +19,7 @@ fn generate_random_string() -> String {
     thread_rng().gen_ascii_chars().take(100).collect()
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 struct Mapper {
     st: SequenceTrie<String, String>,
 }
@@ -80,6 +82,7 @@ impl Mapper {
 ///
 /// [`SequenceTrie`]: ../../sequence_trie/struct.SequenceTrie.html
 /// [`pass(1)`]: https://www.passwordstore.org/
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Repository {
     mapper: Mapper,
 }
