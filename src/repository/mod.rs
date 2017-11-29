@@ -1,4 +1,10 @@
 //! Contains the mine filesystem helper
+//!
+//! The [`Repository`] struct takes care of saving content to disk and retreiving it again, and is
+//! responsible for mapping virtual password paths to secret on-disk filenames.
+//!
+//! [`Repository`]: struct.Repository.html
+
 extern crate sequence_trie;
 extern crate serde_json;
 
@@ -19,6 +25,8 @@ fn generate_random_string() -> String {
     thread_rng().gen_ascii_chars().take(100).collect()
 }
 
+/// Thin internal wrapper over [`SequenceTrie`] to make managing it easier.
+/// [`SequenceTrie`]: ../../sequence_trie/struct.SequenceTrie.html
 #[derive(Serialize, Deserialize, Debug)]
 struct Mapper {
     st: SequenceTrie<String, String>,
