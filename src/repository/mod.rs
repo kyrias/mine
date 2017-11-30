@@ -103,7 +103,7 @@ impl Repository {
     /// it already exists.
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Repository> {
         let repo = Repository {
-            repo_path: path.as_ref().join("repository"),
+            repo_path: path.as_ref().to_path_buf(),
             mapper: Mapper::new()
         };
         repo.create_repo()?;
@@ -115,7 +115,7 @@ impl Repository {
         let mapper: Mapper = serde_json::from_slice(serialized)
             .chain_err(|| "failed to deserialize Repository from JSON")?;
         Ok(Repository {
-            repo_path: path.as_ref().join("repository"),
+            repo_path: path.as_ref().to_path_buf(),
             mapper: mapper,
         })
     }
