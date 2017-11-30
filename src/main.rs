@@ -20,9 +20,9 @@ quick_main!(run);
 
 fn run() -> Result<()> {
     let mut repo = Repository::new();
-    repo.insert("foo/bar", &[1,2,3,4]).chain_err(|| "Could not insert 'foo/bar'")?;
-    println!("{:?}", repo.get("foo/bar").chain_err(|| "Could not get 'foo/bar'")?);
-    println!("{:?}", repo.list("foo").chain_err(|| "Could not list 'foo'")?);
-    repo.delete("foo/bar").chain_err(|| "Could not delete 'foo/bar'")?;
+    repo.insert("foo/bar", &[1,2,3,4]).chain_err(|| "could not insert 'foo/bar'")?;
+    println!("{:?}", repo.get("foo/bar").chain_err(|| "could not get 'foo/bar'")?);
+    println!("{:?}", repo.list("foo").chain_err(|| "could not list 'foo'")?);
+    repo.delete("foo/bar").chain_err(|| "could not delete 'foo/bar'")?;
     Ok(())
 }

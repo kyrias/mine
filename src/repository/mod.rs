@@ -113,7 +113,7 @@ impl Repository {
     /// Deserializes a JSON serialized Repository index.
     pub fn deserialize<P: AsRef<Path>>(serialized: &[u8], path: P) -> Result<Repository> {
         let mapper: Mapper = serde_json::from_slice(serialized)
-            .chain_err(|| "Failed to deserialize Repository from JSON")?;
+            .chain_err(|| "failed to deserialize Repository from JSON")?;
         Ok(Repository {
             repo_path: path.as_ref().join("repository"),
             mapper: mapper,
@@ -123,17 +123,17 @@ impl Repository {
     /// Serializes a Repository index to a JSON byte vector.
     pub fn serialize(&self) -> Result<Vec<u8>> {
         serde_json::to_vec(&self.mapper)
-            .chain_err(|| "Failed to serialize Repository to JSON")
+            .chain_err(|| "failed to serialize Repository to JSON")
     }
 
     /// Create the repository directory if it doesn't already exist.
     fn create_repo(&self) -> Result<()> {
         let repo = &self.repo_path;
         if repo.exists() && !repo.is_dir() {
-            return Err(format!("Repository path '{}' already exists and isn't a directory", repo.display()).into())
+            return Err(format!("repository path '{}' already exists and isn't a directory", repo.display()).into())
         }
         if !repo.exists() {
-            fs::create_dir_all(repo).chain_err(|| "Failed to create repository path")?;
+            fs::create_dir_all(repo).chain_err(|| "failed to create repository path")?;
         }
         Ok(())
     }
@@ -145,33 +145,33 @@ impl Repository {
     /// that we'll lose track of the new file in the repository directory.
     pub fn insert(&mut self, path: &str, content: &[u8]) -> Result<()> {
         fs::create_dir_all(&self.repo_path)
-            .chain_err(|| "Failed to create repository directory")?;
+            .chain_err(|| "failed to create repository directory")?;
         let filename = match self.mapper.find(&path) {
             Some(p) => p,
             None    => self.mapper.insert(path),
         };
         let filepath = self.repo_path.join(filename);
-        let mut file = File::create(filepath).chain_err(|| "Failed to create file")?;
-        file.write_all(content).chain_err(|| "Failed to write content to disk")?;
+        let mut file = File::create(filepath).chain_err(|| "failed to create file")?;
+        file.write_all(content).chain_err(|| "failed to write content to disk")?;
         Ok(())
     }
 
     /// Delete an entry from the index and from disk.
     pub fn delete(&mut self, path: &str) -> Result<()> {
-        let filename = self.mapper.find(&path).chain_err(|| "Could not find Mapper entry")?;
+        let filename = self.mapper.find(&path).chain_err(|| "could not find Mapper entry")?;
         let filepath = self.repo_path.join(filename);
         self.mapper.remove(&path);
-        fs::remove_file(filepath).chain_err(|| "Failed to remove file")?;
+        fs::remove_file(filepath).chain_err(|| "failed to remove file")?;
         Ok(())
     }
 
     /// Look up the given path in the index and then return the contents of the on-disk entry.
     pub fn get(&self, path: &str) -> Result<Vec<u8>> {
-        let filename = self.mapper.find(&path).chain_err(|| "Could not find Mapper entry")?;
+        let filename = self.mapper.find(&path).chain_err(|| "could not find Mapper entry")?;
         let filepath = self.repo_path.join(filename);
-        let mut file = File::open(filepath).chain_err(|| "Failed to open file")?;
+        let mut file = File::open(filepath).chain_err(|| "failed to open file")?;
         let mut buf = Vec::new();
-        file.read_to_end(&mut buf).chain_err(|| "Could not read file content")?;
+        file.read_to_end(&mut buf).chain_err(|| "could not read file content")?;
         Ok(buf)
     }
 
