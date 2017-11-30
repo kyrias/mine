@@ -146,7 +146,10 @@ impl Repository {
     pub fn insert(&mut self, path: &str, content: &[u8]) -> Result<()> {
         fs::create_dir_all(&self.repo_path)
             .chain_err(|| "Failed to create repository directory")?;
-        let filename = self.mapper.insert(path);
+        let filename = match self.mapper.find(&path) {
+            Some(p) => p,
+            None    => self.mapper.insert(path),
+        };
         let filepath = self.repo_path.join(filename);
         let mut file = File::create(filepath).chain_err(|| "Failed to create file")?;
         file.write_all(content).chain_err(|| "Failed to write content to disk")?;
