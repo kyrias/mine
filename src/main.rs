@@ -1,14 +1,15 @@
 #[macro_use] extern crate error_chain;
-#[macro_use] extern crate serde_derive;
-extern crate serde_json;
-extern crate sequence_trie;
-extern crate rand;
 extern crate xdg;
+extern crate libmine;
 
 
-pub mod repository;
 mod errors {
-    error_chain! {}
+    use super::libmine;
+    error_chain! {
+        links {
+            Libmine(libmine::Error, libmine::ErrorKind);
+        }
+    }
 }
 
 
@@ -16,7 +17,8 @@ use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
 
-use repository::Repository;
+
+use libmine::repository::Repository;
 use errors::*;
 
 
