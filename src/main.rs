@@ -13,10 +13,6 @@ mod errors {
 }
 
 
-use std::fs::File;
-use std::io::{Read, Write};
-use std::path::Path;
-
 
 use libmine::repository::Repository;
 use errors::*;
@@ -36,24 +32,8 @@ fn run() -> Result<()> {
     Ok(())
 }
 
-fn load_repository<P: AsRef<Path>>(repo_path: P, index_path: P) -> Result<Repository> {
-    let repo = if index_path.as_ref().exists() {
-        let mut file = File::open(index_path).chain_err(|| "failed to open index file")?;
-        let mut buf = Vec::new();
-        file.read_to_end(&mut buf).chain_err(|| "failed to read index file")?;
-        Repository::deserialize(&buf, repo_path)?
-    } else {
-        Repository::new(repo_path)?
-    };
-    Ok(repo)
 
 }
 
-fn save_index<P: AsRef<Path>>(repo: &Repository, index_path: P) -> Result<()> {
-    let serialized: Vec<u8> = repo.serialize()
-        .chain_err(|| "failed to serialize Repository index")?;
-    let mut file = File::create(index_path)
-        .chain_err(|| "failed to create Repository index file")?;
-    file.write_all(&serialized).chain_err(|| "failed to write Repository index to disk")?;
     Ok(())
 }
