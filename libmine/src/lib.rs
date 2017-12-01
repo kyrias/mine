@@ -1,5 +1,6 @@
 #[macro_use] extern crate error_chain;
 #[macro_use] extern crate serde_derive;
+extern crate serde;
 extern crate serde_json;
 extern crate sequence_trie;
 extern crate rand;
@@ -14,9 +15,30 @@ mod errors {
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
+use std::collections::BTreeMap;
 
 pub use errors::*;
 
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Entry {
+    tags: BTreeMap<String, String>,
+}
+
+impl Entry {
+    pub fn new() -> Entry {
+        Entry { tags: BTreeMap::new() }
+    }
+
+    pub fn insert(&mut self, key: String, value: String) -> Result<()> {
+        self.tags.insert(key, value).ok_or("could not insert tag in entry")?;
+        Ok(())
+    }
+
+    pub fn get(&self, key: &str) -> Option<&String> {
+        self.tags.get(key)
+    }
+}
 
 pub fn load_repository<P: AsRef<Path>>(repo_path: P, index_path: P) -> Result<repository::Repository> {
     let repo = if index_path.as_ref().exists() {

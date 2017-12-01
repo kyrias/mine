@@ -9,10 +9,11 @@ extern crate sequence_trie;
 extern crate serde_json;
 
 use std::path::{Path, PathBuf};
+use std::io::Write;
 use std::fs::{self, File};
-use std::io::{Read, Write};
 use rand::{thread_rng, Rng};
 use sequence_trie::SequenceTrie;
+use serde::{Serialize, Deserialize};
 
 use super::errors::*;
 
@@ -143,7 +144,9 @@ impl Repository {
     ///
     /// NOTE: This does not serialize the repository index to disk as well, so if we forget to do
     /// that we'll lose track of the new file in the repository directory.
-    pub fn insert(&mut self, path: &str, content: &[u8]) -> Result<()> {
+    pub fn insert<S: Serialize>(&mut self, path: &str, entry: S) -> Result<()> {
+        let serialized: Vec<u8> = serde_json::to_vec(&entry)
+            .chain_err(|| "could not serialize entry to json")?;
         fs::create_dir_all(&self.repo_path)
             .chain_err(|| "failed to create repository directory")?;
         let filename = match self.mapper.find(&path) {
@@ -152,7 +155,7 @@ impl Repository {
         };
         let filepath = self.repo_path.join(filename);
         let mut file = File::create(filepath).chain_err(|| "failed to create file")?;
-        file.write_all(content).chain_err(|| "failed to write content to disk")?;
+        file.write_all(&serialized).chain_err(|| "failed to write content to disk")?;
         Ok(())
     }
 
@@ -166,13 +169,15 @@ impl Repository {
     }
 
     /// Look up the given path in the index and then return the contents of the on-disk entry.
-    pub fn get(&self, path: &str) -> Result<Vec<u8>> {
+    pub fn get<T>(&self, path: &str) -> Result<T>
+        where T: for<'de> Deserialize<'de>
+    {
         let filename = self.mapper.find(&path).chain_err(|| "could not find Mapper entry")?;
         let filepath = self.repo_path.join(filename);
-        let mut file = File::open(filepath).chain_err(|| "failed to open file")?;
-        let mut buf = Vec::new();
-        file.read_to_end(&mut buf).chain_err(|| "could not read file content")?;
-        Ok(buf)
+        let file = File::open(filepath).chain_err(|| "failed to open file")?;
+        let deserialized = serde_json::from_reader(file)
+            .chain_err(|| "failed to deserialize entry from json")?;
+        Ok(deserialized)
     }
 
     /// List the entries available under a specific path.

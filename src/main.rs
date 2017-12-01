@@ -31,8 +31,9 @@ fn run() -> Result<()> {
 
     let app = clap_app!(mine =>
         (@subcommand get =>
-            (about: "Get a password")
-            (@arg path: +required "Password path to get")
+            (about: "Get an entry")
+            (@arg path: +required "Entry path to get")
+            (@arg tag: "Entry tag to fetch")
         )
         (@subcommand insert =>
             (about: "Insert a password")
@@ -59,19 +60,18 @@ fn run() -> Result<()> {
 
 fn run_get(matches: &ArgMatches, repo: &mut Repository) -> Result<()> {
     let path = matches.value_of("path").ok_or("missing path argument".to_string())?;
-    match repo.get(path) {
-        Ok(p) => {
-            println!("{}", String::from_utf8(p).chain_err(|| "could not parse password as UTF-8")?);
-        },
-        Err(e) => println!("Error: {}", e),
-    }
+    let key = matches.value_of("tag").unwrap_or("password");
+    let entry: libmine::Entry = repo.get(path).chain_err(|| "failed to get entry from repository")?;
+    println!("{}", entry.get(key).chain_err(|| "no tag with that key")?);
     Ok(())
 }
 
 fn run_insert(matches: &ArgMatches, repo: &mut Repository) -> Result<()> {
     let path = matches.value_of("path").ok_or("missing path argument".to_string())?;
     let password = matches.value_of("password").ok_or("missing password argument".to_string())?;
-    repo.insert(path, password.as_bytes()).chain_err(|| "failed to insert password")?;
+    let mut entry = libmine::Entry::new();
+    entry.insert("password".to_string(), password.to_string()).chain_err(|| "failed to set password tag")?;
+    repo.insert(path, entry).chain_err(|| "failed to insert password")?;
     Ok(())
 }
 
